@@ -1,37 +1,28 @@
 import os
 import time
 from itertools import permutations
-import numpy as np
 from ortools.constraint_solver import routing_enums_pb2, pywrapcp
 
 def load_adjacency_matrix(file_path):
-    """Carrega a matriz de adjacência a partir de um arquivo."""
+    """Carrega a matriz de adjacência a partir de um arquivo, mantendo-a como lista de listas."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Arquivo {file_path} não encontrado.")
     with open(file_path, 'r') as f:
         matrix = [list(map(int, line.strip().split())) for line in f]
-    return np.array(matrix)
+    return matrix  # Retorna como lista de listas
 
 def calculate_path_cost(matrix, path):
     """Calcula o custo de um caminho dado."""
-    return sum(matrix[path[i], path[i + 1]] for i in range(len(path) - 1)) + matrix[path[-1], path[0]]
-
+    return sum(matrix[path[i]][path[i + 1]] for i in range(len(path) - 1)) + matrix[path[-1]][path[0]]
 
 def tsp_exact(matrix):
-    """Resolve o TSP utilizando a força bruta (exato)."""
+    """Resolve o TSP utilizando força bruta (exato)."""
     n = len(matrix)
     best_cost = float('inf')
     best_path = None
 
     for perm in permutations(range(1, n)):
-        current_cost = 0
-        prev = 0  
-
-        for vertex in perm:
-            current_cost += matrix[prev][vertex]
-            prev = vertex
-        current_cost += matrix[prev][0] 
-
+        current_cost = sum(matrix[prev][curr] for prev, curr in zip((0,) + perm, perm + (0,)))
         if current_cost < best_cost:
             best_cost = current_cost
             best_path = (0,) + perm + (0,)
@@ -67,7 +58,7 @@ def tsp_insertion(matrix):
         best_cost, best_insert = float('inf'), None
         for u in unvisited:
             for i in range(len(path) - 1):
-                cost = (matrix[path[i]][u] + matrix[u][path[i + 1]] - matrix[path[i]][path[i + 1]])
+                cost = matrix[path[i]][u] + matrix[u][path[i + 1]] - matrix[path[i]][path[i + 1]]
                 if cost < best_cost:
                     best_cost, best_insert = cost, (i, u)
         path.insert(best_insert[0] + 1, best_insert[1])
@@ -75,7 +66,6 @@ def tsp_insertion(matrix):
 
     path.append(path[0])  # Retorna ao ponto inicial
     return calculate_path_cost(matrix, path), path
-
 
 def tsp_ortools(matrix):
     """Resolve o TSP usando a biblioteca OR-Tools."""
@@ -133,13 +123,10 @@ def solve_tsp(file_path):
 
     print(f"Arquivo: {file_path}")
     print(f"Custo ótimo: {optimal_cost}")
-    print(f"Aproximativo Vizinho Mais Proximo:\nCusto: {approx_cost}, Tempo: {approx_time:.4f}s\n")
+    print(f"Aproximativo Vizinho Mais Próximo:\nCusto: {approx_cost}, Tempo: {approx_time:.4f}s\n")
     print(f"Aproximativo Inserção:\nCusto: {insertion_cost}, Tempo: {insertion_time:.4f}s\n")
     print(f"Exato:\nCusto: {exact_cost}, Tempo: {exact_time:.4f}s\n")
-    # print("Tempo excedido para o custo exato.\n")
     print(f"OR-Tools:\nCusto: {ortools_cost}, Tempo: {ortools_time:.4f}s\n")
 
-
 files = ["tsp1_253.txt", "tsp2_1248.txt", "tsp3_1194.txt", "tsp4_7013.txt", "tsp5_27603.txt"]
-solve_tsp(files[4])
-
+solve_tsp(files[0])
