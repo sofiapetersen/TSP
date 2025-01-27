@@ -3,19 +3,16 @@ import time
 from itertools import permutations
 
 def load_adjacency_matrix(file_path):
-    """Carrega a matriz de adjacência a partir de um arquivo, mantendo-a como lista de listas."""
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Arquivo {file_path} não encontrado.")
     with open(file_path, 'r') as f:
         matrix = [list(map(int, line.strip().split())) for line in f]
-    return matrix  # Retorna como lista de listas
+    return matrix
 
 def calculate_path_cost(matrix, path):
-    """Calcula o custo de um caminho dado."""
     return sum(matrix[path[i]][path[i + 1]] for i in range(len(path) - 1)) + matrix[path[-1]][path[0]]
 
 def tsp_exact(matrix):
-    """Resolve o TSP utilizando força bruta (exato)."""
     n = len(matrix)
     best_cost = float('inf')
     best_path = None
@@ -29,7 +26,6 @@ def tsp_exact(matrix):
     return best_cost, best_path
 
 def tsp_nearest(matrix):
-    """Resolve o TSP utilizando a heurística do vizinho mais próximo."""
     n = len(matrix)
     visited, path, current = [False] * n, [0], 0
     visited[current] = True
@@ -44,7 +40,6 @@ def tsp_nearest(matrix):
     return calculate_path_cost(matrix, path), path
 
 def tsp_insertion(matrix):
-    """Resolve o TSP utilizando a heurística de inserção."""
     n = len(matrix)
     path = [0]  
     unvisited = set(range(1, n))  
@@ -67,7 +62,6 @@ def tsp_insertion(matrix):
     return calculate_path_cost(matrix, path), path
 
 def solve_tsp(file_path):
-    """Resolve uma instância do TSP usando algoritmos exato e aproximativo."""
     try:
         matrix = load_adjacency_matrix(file_path)
         optimal_cost = int(os.path.basename(file_path).split('_')[1].split('.')[0])
