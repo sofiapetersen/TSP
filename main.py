@@ -1,7 +1,6 @@
 import os
 import time
 from itertools import permutations
-from ortools.constraint_solver import routing_enums_pb2, pywrapcp
 
 def load_adjacency_matrix(file_path):
     """Carrega a matriz de adjacência a partir de um arquivo, mantendo-a como lista de listas."""
@@ -67,31 +66,6 @@ def tsp_insertion(matrix):
     path.append(path[0])  # Retorna ao ponto inicial
     return calculate_path_cost(matrix, path), path
 
-def tsp_ortools(matrix):
-    """Resolve o TSP usando a biblioteca OR-Tools."""
-    manager = pywrapcp.RoutingIndexManager(len(matrix), 1, 0)
-    routing = pywrapcp.RoutingModel(manager)
-
-    def distance_callback(from_index, to_index):
-        from_node, to_node = manager.IndexToNode(from_index), manager.IndexToNode(to_index)
-        return matrix[from_node][to_node]
-
-    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
-    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
-
-    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    search_parameters.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-
-    solution = routing.SolveWithParameters(search_parameters)
-    if solution:
-        path, index = [], routing.Start(0)
-        while not routing.IsEnd(index):
-            path.append(manager.IndexToNode(index))
-            index = solution.Value(routing.NextVar(index))
-        path.append(path[0])
-        return solution.ObjectiveValue(), path
-    return None, None
-
 def solve_tsp(file_path):
     """Resolve uma instância do TSP usando algoritmos exato e aproximativo."""
     try:
@@ -116,17 +90,11 @@ def solve_tsp(file_path):
     exact_cost, exact_path = tsp_exact(matrix)
     exact_time = time.time() - start_time if exact_cost else None
 
-    # OR-Tools
-    start_time = time.time()
-    ortools_cost, ortools_path = tsp_ortools(matrix)
-    ortools_time = time.time() - start_time
-
     print(f"Arquivo: {file_path}")
     print(f"Custo ótimo: {optimal_cost}")
     print(f"Aproximativo Vizinho Mais Próximo:\nCusto: {approx_cost}, Tempo: {approx_time:.4f}s\n")
     print(f"Aproximativo Inserção:\nCusto: {insertion_cost}, Tempo: {insertion_time:.4f}s\n")
     print(f"Exato:\nCusto: {exact_cost}, Tempo: {exact_time:.4f}s\n")
-    print(f"OR-Tools:\nCusto: {ortools_cost}, Tempo: {ortools_time:.4f}s\n")
 
 files = ["tsp1_253.txt", "tsp2_1248.txt", "tsp3_1194.txt", "tsp4_7013.txt", "tsp5_27603.txt"]
 solve_tsp(files[0])
